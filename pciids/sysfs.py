@@ -1,8 +1,7 @@
 import glob
 import os, sys
-import subprocess 
+import subprocess
 
-from pciids import *
 
 class SYSfs:
     def __init__(self):
@@ -21,7 +20,6 @@ class Device:
         self.vendor = rF(p,"vendor")
         self.device = rF(p,"device")
         self.subdevice = "%s:%s" % (rF(p,"subsystem_vendor") , rF(p,"subsystem_device"))
-        print pciids.deviceStr(self.vendor, self.device, self.subdevice)
 
 class PCI:
     def __init__(self):
@@ -45,9 +43,6 @@ class Module:
         for u in parse[3:]:
             self.uses.append(u)
 
-        print self.name
-        for u in self.uses:
-            print "  ", u
 
 class Modules:
     def __init__(self):
