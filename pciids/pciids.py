@@ -1,10 +1,5 @@
 import os
-import bz2
-import requests
-import glob
 
-global HOME
-HOME = "https://pci-ids.ucw.cz"
 
 class Vendor:
     """
@@ -89,18 +84,12 @@ class PCIIds:
     All queries will be asked to this class.
     PCIIds.vendors["0e11"].devices["0046"].subdevices["0e11:4091"].name  =  "Smart Array 6i"
     """
-    def __init__(self, url=HOME):
+    def __init__(self):
         """
         Prepares the directories.
         Checks local data file.
         Tries to load from local, if not found, downloads from web
         """
-        self.url = url
-        self.version = ""
-        self.date = ""
-        self.compressed = "pci.ids.bz2"
-        if (os.path.isdir("data") is False):
-            os.mkdir("data")
         self.vendors = {}
         self.contents = None
         self.loadLocal()
@@ -133,7 +122,7 @@ class PCIIds:
 
     def parse(self):
         if len(self.contents) < 1:
-            print( "data/%s-pci.ids not found" % self.date)
+            print( "system pci.ids not found" )
         else:
             vendorID = ""
             deviceID = ""
@@ -153,14 +142,6 @@ class PCIIds:
                         self.vendors[vendorID] = Vendor(l)
 
     def getLatest(self):        
-        ver, date, url = self.latestVersion()
-        outfile = "data/%s-%s" % (date, self.compressed[:-4]) # remove bz2            
-        out = open(outfile, "wb")
-        resp = requests.get(url)
-        out.write(bz2.decompress(resp.content))        
-        out.close()
-        self.version = ver
-        self.date = date
         self.readLocal()
 
 
@@ -168,48 +149,10 @@ class PCIIds:
         """
         Reads the local file
         """
-        self.contents = open("data/%s-pci.ids" % self.date).readlines()
-        self.date = self.findDate(self.contents)
+        self.contents = open("/usr/share/misc/pci.ids").readlines()
 
     def loadLocal(self):
-        """
-        Loads database from local. If there is no file,
-        it creates a new one from web
-        """
-        idsfile = glob.glob("data/*.ids")
-        if len(idsfile) == 0:
-            self.getLatest()
-        else:
-            self.date = idsfile[0].split("/")[1].split("-")[0]
-            self.readLocal()
-
-    def latestVersion(self):
-        """
-        Checks the latest version from web
-        """
-        resp = requests.get(self.url)
-        webPage = resp.content.decode().splitlines()
-        for line in webPage:
-            if line.find(self.compressed) > -1:
-                print(line)
-                for tag in line.split("<"):
-                    if tag.find(self.compressed) > -1:
-                        path = tag.split('"')[1]
-                        ver = path.split("/")[1]
-                        url = "%s%s" % (self.url, path)
-                        urlUncompressed  = url.replace(".bz2","")
-                        resp2 = requests.get(urlUncompressed)                        
-                        con = resp2.content.decode().splitlines()
-                        for i in range(10):
-                            l = con[i]
-
-                            if l.find("Date:") > -1:
-                                date = l.split()[-2].replace("-","")
-                                break
-                        
-                        return (ver, date, "%s%s" % (HOME, path))
-                break
-        return ""
+        self.readLocal()
 
 
 if __name__ == "__main__":
